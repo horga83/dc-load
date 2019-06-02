@@ -1,4 +1,4 @@
-# dc-load
+# DC Load
 2.8" TOUCH SCREEN DC LOAD        
 
 June 01, 2019
@@ -40,7 +40,7 @@ ADS1115:        4 port 16 bit anaolog I2C board.
 
 Search Banggood for display, Doit ESP32 and ADS1115
 
-CONNECTION
+#### CONNECTION
 -------------------------------------------------------------------------
 Pinouts are as follows:
 
@@ -62,31 +62,31 @@ LCD_RD   | D2  GPIO02
 GND      | GND
 
 
-SETUP
+#### SETUP
 --------------------------------------------------------------------------
 Touchscreen.h and Touchscreen.cpp should reside locally in the directory 
 of the code you are writing so they don't collide with the official Arduino 
 code.
 
-TOUCHSCREEN
+#### TOUCHSCREEN
 -----------
 Modifications to touchscreen.h
 
-Line 14    #define aXM 33  // analog input pin connected to LCD_CS 
-Line 15    #define aYP 15  // analog input pin connected to LCD_RS
+Line 14    #define aXM 33  // analog input pin connected to LCD_CS  
+Line 15    #define aYP 15  // analog input pin connected to LCD_RS  
 
 Modifications to touchscreen.cpp
 
-Added layout parameter to the Touchscreen creation.
-From this: 
-     TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);
-To This:
-TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300, rotation);
+Added layout parameter to the Touchscreen creation.  
+From this:  
+     TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300);  
+To This:  
+TouchScreen ts = TouchScreen(XP, YP, XM, YM, 300, rotation);  
 
-and it is used in getPoint()
+and it is used in getPoint()  
 
 
-TFT_eSPI
+#### TFT_eSPI
 --------
 This is a parallel connected display so we need to modify a few files in the
 TFT_eSPI Arduino library which you can install with your Library Manager in 
