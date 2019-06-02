@@ -25,18 +25,18 @@ This is all setup for the ESP32 Doit V1 board and Touch display
 
 This project requires the following Ardunio libraries:
 
-TFT_eSPI code from: https://github.com/Bodmer/TFT_eSPI
-Touchscreen code from: https://github.com/s60sc/Adafruit_TouchScreen
-ADS1115 code from: https://github.com/adafruit/Adafruit_ADS1X15
+TFT_eSPI code from: https://github.com/Bodmer/TFT_eSPI  
+Touchscreen code from: https://github.com/s60sc/Adafruit_TouchScreen  
+ADS1115 code from: https://github.com/adafruit/Adafruit_ADS1X15  
 
 I have included a copy of the touchscreen.[cpp,h] here with modified values.
 
 You will have to calibrate your screen and setup the coords[] array.  This code
 is setup for a 2.8" resistive touch display.  Hardware is:
 
-ESP32 board:    Doit devkit V1, 36 pin board
-Touch Display:  2.8" Geekcreit TFT LCD Touch Display for Ardunio (ILI9341)
-ADS1115:        4 port 16 bit anaolog I2C board.
+ESP32 board:    Doit devkit V1, 36 pin board  
+Touch Display:  2.8" Geekcreit TFT LCD Touch Display for Ardunio (ILI9341)  
+ADS1115:        4 port 16 bit anaolog I2C board.  
 
 Search Banggood for display, Doit ESP32 and ADS1115
 
@@ -44,23 +44,22 @@ CONNECTION
 -------------------------------------------------------------------------
 Pinouts are as follows:
 
-Display  ESP32
--------------------
-D0       D12 GPIO12
-D1       D13 GPIO13
-D2       D26 GPIO26
-D3       D25 GPIO25
-D4       TX2 GPIO17
-D5       RX2 GPIO16
-D6       D27 GPIO27
-D7       D14 GPIO14
-LCD_CS   D33 GPIO33
-LCD_RS   D15 GPIO15
-LCD_WR   D4  GPIO04
-LCD_RD   D2  GPIO02
-
-+5V      VIN
-GND      GND
+Display  | ESP32
+-------- | -----------
+D0       | D12 GPIO12  
+D1       | D13 GPIO13  
+D2       | D26 GPIO26  
+D3       | D25 GPIO25
+D4       | TX2 GPIO17
+D5       | RX2 GPIO16
+D6       | D27 GPIO27
+D7       | D14 GPIO14
+LCD_CS   | D33 GPIO33
+LCD_RS   | D15 GPIO15
+LCD_WR   | D4  GPIO04
+LCD_RD   | D2  GPIO02
++5V      | VIN
+GND      | GND
 
 
 SETUP
