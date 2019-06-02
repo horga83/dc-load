@@ -1,7 +1,7 @@
 # dc-load
 2.8" TOUCH SCREEN DC LOAD        
 
-Copyright George Farris (ve7frg) and Lawrence Glaister (ve7it) June 01, 2019
+June 01, 2019
 This software is provied under the terms of the GNU Public License Version 3.
 
 DC LOAD test software for testing power supplies and batteries.  Tests can
