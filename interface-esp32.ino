@@ -51,8 +51,8 @@ TFT_eSPI tft = TFT_eSPI();
 
 // Fan run level temperatures and alarm
 #define FAN_START_TEMP 28
-#define FAN_FULL_TEMP 80
-#define FAN_ALARM_TEMP 100
+#define FAN_FULL_TEMP 50
+#define FAN_ALARM_TEMP 75
 
 // Temperature values for thermistor calculations
 #define THERMISTORNOMINAL  10000.0 // resistance at 25 degrees C    
@@ -536,7 +536,10 @@ void check_temp()
         }
         
         // map temp to PWM, my fan won't run under 40
-        pwm = map(temperature, FAN_START_TEMP, FAN_FULL_TEMP, 40, 255); 
+        if (temperature > FAN_FULL_TEMP)    // map falls apart if value is too high
+            pwm = 255;
+        else
+            pwm = map(temperature, FAN_START_TEMP, FAN_FULL_TEMP, 40, 255); 
         ledcWrite(fan_pwm_channel, pwm);
     } else {
         ledcWrite(fan_pwm_channel, 0);  //fan off
