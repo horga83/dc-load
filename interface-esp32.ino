@@ -45,7 +45,7 @@ TFT_eSPI tft = TFT_eSPI();
 #define CURRENT_ADC 2   //channel 2 on ads1115
 
 // ADS1115 anaolog input scaling factors
-#define AMPS_SCALE 200.0
+#define AMPS_SCALE 210.0
 #define TEMP_SCALE 25900.0
 #define VOLTS_SCALE 292.0
 
@@ -687,9 +687,11 @@ void calculate_mamp_hours()
 // Set the load current
 void set_current(float current)
 {
-    uint8_t pwm = 0;
+    uint16_t pwm = 0;
 
-    pwm = (uint8_t)lround(current * 25.5);
+    pwm = (uint16_t)lround((412.018715 * current) + 3.594873);
+    if (current < 0.02)
+        pwm = 0;
     ledcWrite(mosfet_pwm_channel, pwm);
 }
 
