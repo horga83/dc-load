@@ -32,6 +32,7 @@
 TFT_eSPI tft = TFT_eSPI();
 #include "TouchScreen.h"
 
+#define VERSION "Verison .90"
 #define OWNER "VE7FRG"
 
 // Default load current in amps if i_limit is 0
@@ -168,13 +169,13 @@ int16_t temperature = 0;
 float milliamp_hours = 0.0;
 
 // PWM settings for MOSFET
-int mosfet_pwm_freq = 10000;
+int mosfet_pwm_freq = 5000;
 int mosfet_pwm_channel = 0;
-int mosfet_pwm_resolution = 8;
+int mosfet_pwm_resolution = 12;
 
 // PWM settings for FAN
 int fan_pwm_freq = 5000;
-int fan_pwm_channel = 1;
+int fan_pwm_channel = 2;
 int fan_pwm_resolution = 8;
 
 Adafruit_ADS1115 ads(0x48); /* I2C address of analog board */
@@ -247,10 +248,15 @@ void setup() {
     tft.print(OWNER);
     
 //    tft.setFont();
-    tft.setCursor(65, 80);
+    tft.setCursor(58, 80);
     tft.setTextColor(RED);
     tft.setTextSize(5);
     tft.print("DC LOAD");
+
+    tft.setCursor(95, 140);
+    tft.setTextColor(WHITE);
+    tft.setTextSize(2);
+    tft.print(VERSION);
 
     tft.setCursor(30, 188);
     tft.setTextColor(WHITE);
@@ -688,8 +694,8 @@ void calculate_mamp_hours()
 void set_current(float current)
 {
     uint16_t pwm = 0;
-
-    pwm = (uint16_t)lround((412.018715 * current) + 3.594873);
+    
+    pwm = (uint16_t)round(412.018715 * current + 3.594873);
     if (current < 0.02)
         pwm = 0;
     ledcWrite(mosfet_pwm_channel, pwm);
