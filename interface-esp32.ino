@@ -32,7 +32,7 @@
 TFT_eSPI tft = TFT_eSPI();
 #include "TouchScreen.h"
 
-#define VERSION "Verison .90"
+#define VERSION "Verison .99"
 #define OWNER "VE7FRG"
 
 // Default load current in amps if i_limit is 0
@@ -46,7 +46,6 @@ TFT_eSPI tft = TFT_eSPI();
 #define CURRENT_ADC 2   //channel 2 on ads1115
 
 // ADS1115 anaolog input scaling factors
-#define AMPS_SCALE 210.0
 #define TEMP_SCALE 25900.0
 #define VOLTS_SCALE 292.0
 
@@ -477,7 +476,7 @@ void update_display()
     tft.setCursor(170, 70);
     tft.setTextColor(WHITE);
     tft.setTextSize(3);
-    tft.print(amps);
+    tft.print(amps,3);
     tft.print("A");
 
     // Temperature
@@ -566,15 +565,13 @@ void read_ads1115()
     a = 0;
     
     temp_ain = (int16_t)ads.readADC_SingleEnded(TEMP_ADC);
-    //Serial.print(temp_ain); Serial.print(" v- ");
     
     v = (int16_t)ads.readADC_SingleEnded(VOLTAGE_ADC);
     volts = v / VOLTS_SCALE;
-    //Serial.print(v); Serial.print(" a- ");
 
+    // A calibration must be run for this scaling formula, please see documentation
     a = (int16_t)ads.readADC_SingleEnded(CURRENT_ADC);
-    amps = a / AMPS_SCALE;
-    //Serial.println(a);
+    amps = a * 0.00044471 - 0.02464448;
 }
 
 // check_time()
@@ -695,9 +692,12 @@ void set_current(float current)
 {
     uint16_t pwm = 0;
     
-    pwm = (uint16_t)round(412.018715 * current + 3.594873);
+    // A calibration must be run for this scaling formula, please see documentation
+    pwm = (uint16_t)round(399.37555 * current + 9.09426);    
+
     if (current < 0.02)
         pwm = 0;
+
     ledcWrite(mosfet_pwm_channel, pwm);
 }
 
