@@ -27,13 +27,19 @@
 */
 #include <Wire.h>
 #include <Adafruit_ADS1015.h>
+#include <RTClib.h>
 
 #include <TFT_eSPI.h>
 TFT_eSPI tft = TFT_eSPI();
 #include "TouchScreen.h"
 
-#define VERSION "Verison .99"
+#define VERSION "Verison 1.0"
 #define OWNER "VE7FRG"
+
+// Position of RTC clock on screen
+#define RTC_PRESENT false
+#define X_POS 150
+#define SCREEN_SLEEP_TIME 300   //time in seconds to wait before running the rtc_clock
 
 // Default load current in amps if i_limit is 0
 #define DEFAULT_CURRENT 1.00
@@ -177,11 +183,47 @@ int fan_pwm_freq = 5000;
 int fan_pwm_channel = 2;
 int fan_pwm_resolution = 8;
 
+
+// these are for drawing the RTC analog clock
+float sx = 0, sy = 1, mx = 1, my = 0, hx = -1, hy = 0;    // Saved H, M, S x & y multipliers
+float sdeg=0, mdeg=0, hdeg=0;
+uint16_t osx=120, osy=120, omx=120, omy=120, ohx=120, ohy=120;  // Saved H, M, S x & y coords
+uint16_t x0=0, x1=0, yy0=0, yy1=0;
+uint32_t targetTime = 0;                    // for next 1 second timeout
+uint8_t hh, mm, ss;
+boolean initial = 1;
+
+// Whether I2C DS3231 RTC module is attached or not.
+boolean rtc_present = RTC_PRESENT;
+
 Adafruit_ADS1115 ads(0x48); /* I2C address of analog board */
+RTC_DS3231 rtc;  // default I2C address
 
 void setup() {
     Serial.begin(9600);
     Serial.println("Starting...");
+
+// This doesn't work the library just returns true no matter what so we have to manually set the
+// RTC_PRESENT define until this is fixed.
+
+//    if (!rtc.begin())
+//    {
+//        Serial.println("No RTC module present");
+//        rtc_present = false;
+//    }
+
+    if (rtc_present)
+    {
+        if (rtc.lostPower()) 
+        {
+            Serial.println("RTC lost power, lets set the time!");
+            // following line sets the RTC to the date & time this sketch was compiled
+            rtc.adjust(DateTime(F(__DATE__), F(__TIME__)));
+            // This line sets the RTC with an explicit date & time, for example to set
+            // January 21, 2014 at 3am you would call:
+            // rtc.adjust(DateTime(2014, 1, 21, 3, 0, 0));
+        }
+    }
 
     ads.begin();  //Init analog board
     ads.setGain(GAIN_TWOTHIRDS);  // 2/3x gain +/- 6.144V  1 bit = 0.1875mV (default)
@@ -434,6 +476,99 @@ void draw_clock()
   tft.fillRect(262, 110, 30, 30, BLACK);
   tft.setCursor(262, 110);
   tft.print(s);
+}
+
+void update_rtc_clock()
+{
+    //This is important, because the libraries are sharing pins
+    pinMode(XM, OUTPUT);
+    pinMode(YP, OUTPUT);
+    
+    DateTime now = rtc.now();
+
+    hh = now.hour();
+    mm = now.minute();
+    ss = now.second();
+
+    // Pre-compute hand degrees, x & y coords for a fast screen update
+    sdeg = ss*6;                  // 0-59 -> 0-354
+    mdeg = mm*6+sdeg*0.01666667;  // 0-59 -> 0-360 - includes seconds
+    hdeg = hh*30+mdeg*0.0833333;  // 0-11 -> 0-360 - includes minutes and seconds
+    hx = cos((hdeg-90)*0.0174532925);    
+    hy = sin((hdeg-90)*0.0174532925);
+    mx = cos((mdeg-90)*0.0174532925);    
+    my = sin((mdeg-90)*0.0174532925);
+    sx = cos((sdeg-90)*0.0174532925);    
+    sy = sin((sdeg-90)*0.0174532925);
+
+    if (ss==0 || initial) 
+    {
+        initial = 0;
+        // Erase hour and minute hand positions every minute
+        tft.drawLine(ohx, ohy, X_POS, 121, TFT_BLACK);
+        ohx = hx*62+X_POS+1;    
+        ohy = hy*62+121;
+        tft.drawLine(omx, omy, X_POS, 121, TFT_BLACK);
+        omx = mx*84+X_POS;    
+        omy = my*84+121;
+    }
+
+    // Redraw new hand positions, hour and minute hands not erased here to avoid flicker
+    tft.drawLine(osx, osy, X_POS, 121, TFT_BLACK);
+    osx = sx*90+X_POS+1;    
+    osy = sy*90+121;
+    tft.drawLine(osx, osy, X_POS, 121, TFT_RED);
+    tft.drawLine(ohx, ohy, X_POS, 121, TFT_WHITE);
+    tft.drawLine(omx, omy, X_POS, 121, TFT_WHITE);
+    tft.drawLine(osx, osy, X_POS, 121, TFT_RED);
+
+    tft.fillCircle(X_POS, 121, 3, TFT_RED);}
+
+// draw_rtc_clock()
+// Most of this is taken from example in the TFT_eSPI library
+// Based on a sketch by Gilchrist 6/2/2014 1.0
+void draw_rtc_clock()
+{
+    //This is important, because the libraries are sharing pins
+    pinMode(XM, OUTPUT);
+    pinMode(YP, OUTPUT);
+
+    tft.fillScreen(BLACK);
+    tft.setTextColor(WHITE, GRAY);  // Adding a background colour erases previous text automatically
+  
+    // Draw clock face
+    tft.fillCircle(X_POS, 120, 118, GREEN);
+    tft.fillCircle(X_POS, 120, 110, BLACK);
+
+    // Draw 12 lines
+    for(int i = 0; i<360; i+= 30) 
+    {
+        sx = cos((i-90)*0.0174532925);
+        sy = sin((i-90)*0.0174532925);
+        x0 = sx*114+X_POS;
+        yy0 = sy*114+120;
+        x1 = sx*100+X_POS;
+        yy1 = sy*100+120;
+
+        tft.drawLine(x0, yy0, x1, yy1, GREEN);
+    }
+
+    // Draw 60 dots
+    for(int i = 0; i<360; i+= 6) 
+    {
+        sx = cos((i-90)*0.0174532925);
+        sy = sin((i-90)*0.0174532925);
+        x0 = sx*102+X_POS;
+        yy0 = sy*102+120;
+        // Draw minute markers
+        tft.drawPixel(x0, yy0, WHITE);
+    
+        // Draw main quadrant dots
+        if(i==0 || i==180) tft.fillCircle(x0, yy0, 2, WHITE);
+        if(i==90 || i==270) tft.fillCircle(x0, yy0, 2, WHITE);
+    }
+
+    tft.fillCircle(X_POS, 121, 3, WHITE);
 }
 
 void update_clock()
@@ -813,12 +948,16 @@ void check_buttons(TSPoint p)
 // Main loop
 void loop()
 {
-    static int last_second = 0;
+    static uint16_t last_second = 0;
+    static unsigned long lastTick = 0;
+    static uint16_t sleep_time = 1;
+    static boolean rtc_clock_drawn = false;
     
     update_clock();
     
     TSPoint touch_point = ts.getPoint();  //Get touch point
     
+    // Touch the screen to get past the splash screen
     if (touch_point.z > ts.pressureThreshhold)
     {
         touch_point.x = map(touch_point.x, coords[2], coords[3], 0, 320); 
@@ -833,6 +972,8 @@ void loop()
             setup_enabled = true;
             run_enabled = false;
             stop_enabled = false;
+            rtc_clock_drawn = false;
+            sleep_time = 0;  // disable clock if screen has been touched until "reset"
           
             //This is important, because the libraries are sharing pins
             pinMode(XM, OUTPUT);
@@ -843,6 +984,33 @@ void loop()
             setup_screen();
         }
     }
+
+    // move forward one second every 1000 milliseconds
+    if (millis() - lastTick >= 1000) 
+    {
+        lastTick = millis();
+        if (rtc_present)
+        {
+            if (sleep_time > SCREEN_SLEEP_TIME)
+            {
+                if (!rtc_clock_drawn)
+                {
+                    draw_rtc_clock();
+                    rtc_clock_drawn = true;    
+                }
+                else
+                {
+                    update_rtc_clock();
+                }
+            } 
+            else
+            {
+                if (sleep_time > 0)     // only run it at the splash screen
+                    sleep_time += 1;
+            }
+        }
+    }
+
 
     if (!start_enabled)
     {
@@ -1014,5 +1182,4 @@ void loop()
             update_display();
         }
   }
-
 }
