@@ -33,7 +33,7 @@
 TFT_eSPI tft = TFT_eSPI();
 #include "TouchScreen.h"
 
-#define VERSION "Verison 1.0"
+#define VERSION "Verison 1.1"
 #define OWNER "VE7FRG"
 
 // Position of RTC clock on screen
@@ -667,14 +667,15 @@ void check_temp()
     //ramp fan every FAN_RAMP_STEP degrees
     if (temperature > FAN_START_TEMP)
     {
+        //threshold = true;   // don't let fan oscillate around start point
         // Kick fan to 255, my fan won't start until about 80
         if (!fan_kicked)
         {
             ledcWrite(fan_pwm_channel, 255);
             fan_kicked = true;
-            delay(1000);
+            delay(300);
         }
-        
+
         // map temp to PWM, my fan won't run under 40
         if (temperature > FAN_FULL_TEMP)    // map falls apart if value is too high
             pwm = 255;
@@ -682,8 +683,18 @@ void check_temp()
             pwm = map(temperature, FAN_START_TEMP, FAN_FULL_TEMP, 40, 255); 
         ledcWrite(fan_pwm_channel, pwm);
     } else {
-        ledcWrite(fan_pwm_channel, 0);  //fan off
-        fan_kicked = false;
+        // run fan down 2 degrees, otherwise it will slowly oscillate around the set point
+        // and be super annoying to listen to.
+        if (fan_kicked)     
+        {                   
+            if( temperature >  FAN_START_TEMP - 2)
+            {
+                ledcWrite(fan_pwm_channel, 40);  //fan at minimum
+            } else {
+                ledcWrite(fan_pwm_channel, 0);  //fan off
+                fan_kicked = false;        
+            }
+        }
     }
 }
 
