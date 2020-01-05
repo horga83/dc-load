@@ -33,7 +33,7 @@
 TFT_eSPI tft = TFT_eSPI();
 #include "TouchScreen.h"
 
-#define VERSION "Verison 1.1"
+#define VERSION "Verison 1.2"
 #define OWNER "VE7FRG"
 
 // Position of RTC clock on screen
@@ -195,6 +195,7 @@ boolean initial = 1;
 
 // Whether I2C DS3231 RTC module is attached or not.
 boolean rtc_present = RTC_PRESENT;
+uint8_t rtctime[3];    //holds the time
 
 Adafruit_ADS1115 ads(0x48); /* I2C address of analog board */
 RTC_DS3231 rtc;  // default I2C address
@@ -751,7 +752,7 @@ void check_time()
 void parse_time()
 {
     uint8_t count = 0;
-    uint8_t time[3];
+    //uint8_t time[3]; this is now a global so rtc can be set
   
     char *p;
     p = strtok(t_limit,":");
@@ -759,47 +760,47 @@ void parse_time()
     {
         count++;
         Serial.println(p);
-        time[count-1] = atoi(p);
+        rtctime[count-1] = atoi(p);
         p = strtok (NULL, ":");
     }
 
     switch (count) 
     {
         case 1:
-            if (time[0] < 0 || time[0] >59)
+            if (rtctime[0] < 0 || rtctime[0] >59)
             {
-                time[0] = 0;
+                rtctime[0] = 0;
             }
-            sprintf(t_limit, "00:00:%d", time[0]);
-            t_limit_long = (long)time[0];
+            sprintf(t_limit, "00:00:%d", rtctime[0]);
+            t_limit_long = (long)rtctime[0];
             break;
         case 2:
-            if (time[0] < 0 || time[0] >59)
+            if (rtctime[0] < 0 || rtctime[0] >59)
             {
-                time[0] = 0; time[1] = 0;
+                rtctime[0] = 0; rtctime[1] = 0;
             }
-            if (time[1] < 0 || time[1] >59)
+            if (rtctime[1] < 0 || rtctime[1] >59)
             {
-                time[0] = 0; time[1] = 0;
+                rtctime[0] = 0; rtctime[1] = 0;
             }
-            sprintf(t_limit, "00:%d:%d", time[0],time[1]);
-            t_limit_long = (long)(time[0] * 60 + time[1]);
+            sprintf(t_limit, "00:%d:%d", rtctime[0],rtctime[1]);
+            t_limit_long = (long)(rtctime[0] * 60 + rtctime[1]);
             break;
         case 3:
-            if (time[0] < 0 || time[0] >59)
+            if (rtctime[0] < 0 || rtctime[0] >59)
             {
-                time[0] = 0; time[1] = 0; time[2] = 0;
+                rtctime[0] = 0; rtctime[1] = 0; rtctime[2] = 0;
             }
-            if (time[1] < 0 || time[1] >59)
+            if (rtctime[1] < 0 || rtctime[1] >59)
             {
-                time[0] = 0; time[1] = 0; time[2] = 0;
+                rtctime[0] = 0; rtctime[1] = 0; rtctime[2] = 0;
             }
-            if (time[2] < 0 || time[2] >99)
+            if (rtctime[2] < 0 || rtctime[2] >99)
             {
-                time[0] = 0; time[1] = 0; time[2] = 0;
+                rtctime[0] = 0; rtctime[1] = 0; rtctime[2] = 0;
             }
-            sprintf(t_limit, "%d:%d:%d", time[0],time[1],time[2]);
-            t_limit_long = (long)(time[0] * 3600 + time[1] * 60 + time[0]);
+            sprintf(t_limit, "%d:%d:%d", rtctime[0],rtctime[1],rtctime[2]);
+            t_limit_long = (long)(rtctime[0] * 3600 + rtctime[1] * 60 + rtctime[0]);
             break;
     }
 }
@@ -936,6 +937,14 @@ void check_buttons(TSPoint p)
                 // Reset button
                 if (b == 22)
                 {
+                    if (rtc_present)
+                    {
+                        if (time_set) 
+                        {
+                            parse_time();  //error check it
+                        }
+                        rtc.adjust(DateTime(2010, 1, 1, rtctime[0], rtctime[1], rtctime[2]));
+                    }
                     ESP.restart();
                 }
             }
